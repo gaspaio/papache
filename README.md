@@ -1,4 +1,51 @@
-papache
-=======
+# Papache
 
 Phing script to manage drupal installations on apache virtual hosts
+
+It provides the following targets :
+
+*   **vhcreate**	
+    Create a virtual host installation
+*   **vhdelete**
+    Delete a virtual host.
+*   **vhdrupal**
+    Downloads and installs drupal and creates an Apache virtual host
+
+## Usage
+
+### Setup
+
+You'll need to install phing. See www.phing.info for instructions.
+You'll also need to install Drush 5+. Checkout drupal.org/project/drush.
+
+The papache git clone or download bundle commes with the Drush Phing Task available on drupal.org/project/phingdrushtask
+
+Currently Papache assumes that you're using debian-ish environment, so don't expect this to work anywhere else.
+
+Then you'll need to configure the papache.properties file with your own system settings and preferences.
+
+### Running tha thing !
+
+You can either invoke the build script via phing directly :
+
+    phing -f <path_to_papache>/papache.xml vhdrupal -Dvhostname=<virtual_host_name>
+
+Or you can create a symlinked command in one of your path directories and point it to papache.sh. You'll probably want to change papache.sh to your own settings.
+
+If you do this correctly you'll be able to write
+
+    papache vhdrupal mysite.local
+
+or
+
+    papache vhcreate mysite.local
+
+and
+
+
+    papache vhdelete mysite.local
+
+### Bug reports, feature requests, etc
+
+They're great. Patches / Pull requests are better though !
+
