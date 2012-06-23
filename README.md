@@ -42,10 +42,9 @@ or
 
 and
 
-
     papache vhdelete mysite.local
 
-### Bug reports, feature requests, etc
+## Bug reports, feature requests, etc
 
 They're great. Patches / Pull requests are better though !
 
