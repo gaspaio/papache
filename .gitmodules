@@ -1,0 +1,3 @@
+[submodule "tasks/phingdrushtask"]
+	path = tasks/phingdrushtask
+	url = http://git.drupal.org/project/phingdrushtask.git

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="FooBar" default="help">
+  <property name="templateDir" value="${project.basedir}/templates"/>
+  <property name="taskDir" value="${project.basedir}/tasks"/>
+  <property file="${project.basedir}/papache.properties"/>
+  <echo message="taskdir=${taskDir}"/>
+  <taskdef name="drush" classname="DrushTask"
+           classpath="${taskDir}/phingdrushtask"/>
+
+  <target name="help">
+    <echo message="This is a help text with the different options"/>
+  </target>
+
+
+  <target name="vhdrupal" depends="checkParams">
+    <phingCall target="drupalCreate"/>
+    <phingCall target="vhcreate"/>
+  </target>
+
+  <target name="vhcreate" depends="checkParams">
+    <echo message="Creating (if it doesn't exist) the ${filesys.apacheroot}/${vhostname} virtual host and directory on ${filesys.apacheroot}"/>
+    <mkdir dir="${filesys.apacheroot}/${vhostname}"/>
+    <chown file="${filesys.apacheroot}/${vhostname}" 
+           user="${filesys.siteowner}.${filesys.sitegrp}" 
+           verbose="true" 
+           failonerror="false"/>
+
+    <!-- write vhosts file with the information -->    
+    <echo message="Creating virtual host ${vhostname}"/>
+    <copy file="${templateDir}/vhost_template.conf" 
+          tofile="/etc/apache2/sites-available/${vhostname}.conf" 
+          overwrite="true">
+      <filterchain>
+        <replaceregexp>
+          <regexp pattern="##SERVNAME##" replace="${vhostname}" ignoreCase="true" />
+          <regexp pattern="##DOCROOT##" replace="${filesys.apacheroot}/${vhostname}" ignoreCase="false" />
+        </replaceregexp>
+      </filterchain> 
+    </copy>
+ 
+    <!-- apply site and reload apache configs -->
+    <exec command="a2ensite ${vhostname}.conf" />
+    <exec command="/etc/init.d/apache2 reload" />
+
+    <!-- update hosts file -->
+    <phingCall target="add_localhost"/>
+  </target>
+
+
+  <target name="vhdelete" depends="checkParams"> 
+    <echo message="Deleting vistual host ${filesys.apacheroot}/${vhostname}"/>
+    <exec command="a2dissite ${vhostname}.conf"/>
+    <exec command="/etc/init.d/apache2 reload"/>
+    <delete file="/etc/apache2/sites-available/${vhostname}.conf"/>
+    <phingCall target="del_localhost"/>
+  </target>
+
+
+  <target name="drupalCreate" depends="checkParams">
+    <echo message="Building Drupal using the '${drupal.makefile} makefile"/> 
+    <drush command="make" assume="yes">
+      <param>${drupal.makefile}</param>
+      <param>${filesys.apacheroot}/${vhostname}</param>
+    </drush>
+
+    <chown user="${filesys.siteowner}.${filesys.sitegrp}" 
+           verbose="false" 
+           failonerror="false">
+      <fileset dir="${filesys.apacheroot}/${vhostname}"/>
+    </chown>
+
+    <!-- Don't use dots in the database name -->
+    <php expression="str_replace('.','_', '${vhostname}')" returnProperty="dbname"/>
+    <drush command="site-install" assume="yes">
+      <option name="root">${filesys.apacheroot}/${vhostname}</option>
+      <option name="db-url">mysql://${mysql.user}:${mysql.password}@${mysql.host}/${dbname}</option>
+      <param>${drupal.profile}</param> 
+    </drush>
+  </target>
+
+
+  <!-- Add the virtual host entry to the /etc/hosts file -->
+  <target name="add_localhost" depends="checkParams">
+    <append destFile="/etc/hosts" text="${line.separator}127.0.0.1  ${vhostname}${line.separator}" />
+  </target>
+
+
+  <!-- Delete the virtual host entry from the /etc/hosts file -->
+  <target name="del_localhost" depends="checkParams">
+    <!-- This is simple and faster using sed instead of a reflexive task and filterchains -->
+    <php expression="str_replace('.','\.', '${vhostname}')" returnProperty="cleanVhostname"/>
+    <exec command="sed -i '/${cleanVhostname}/d' /etc/hosts"/>
+  </target>
+
+
+  <!-- Load for the properties file and check params -->
+  <target name="checkParams">
+    <property name="drupal.makefile" value="${templateDir}/default.make"/>
+    <property name="drupal.profile" value="standard"/>
+
+
+    <!-- Define generic defaults -->
+    <property name="filesys.apacheroot" value="/var/www"/>
+    <property name="filesys.siteowner" value="root"/>
+    <property name="filesys.sitegrp" value="root"/>
+
+    <fail unless="vhostname" message="No virtual host name! Check the help text for options." />
+  </target>
+
+</project>
