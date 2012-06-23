@@ -4,23 +4,21 @@ Phing script to manage drupal installations on apache virtual hosts
 
 It provides the following targets :
 
-*   **vhcreate**	
-    Create a virtual host installation
-*   **vhdelete**
-    Delete a virtual host.
-*   **vhdrupal**
-    Downloads and installs drupal and creates an Apache virtual host
+*   **vhcreate** - Create a virtual host installation
+*   **vhdelete** - Delete a virtual host.
+*   **vhdrupal** - Downloads and installs drupal and creates an Apache virtual host
 
 ## Usage
 
 ### Setup
 
 You'll need to install phing. See www.phing.info for instructions.
-You'll also need to install Drush 5+. Checkout drupal.org/project/drush.
 
-The papache git clone or download bundle commes with the Drush Phing Task available on drupal.org/project/phingdrushtask
+You'll also need to install Drush 5+. Checkout www.drupal.org/project/drush.
 
-Currently Papache assumes that you're using debian-ish environment, so don't expect this to work anywhere else.
+The papache git clone or download bundle commes with the Drush Phing Task available on www.drupal.org/project/phingdrushtask
+
+Currently Papache assumes that you're using a debian-ish environment, so don't expect this to work anywhere else.
 
 Then you'll need to configure the papache.properties file with your own system settings and preferences.
 
@@ -52,7 +50,7 @@ They're great. Patches / Pull requests are better though !
 
 ## Credits
 
-Well, ME i gess, but also :
+Well, **me** i gess, but also :
 
 * **https://github.com/reload/phing-drupal-template**
     A great phing script pour Jenkins and Drupal
