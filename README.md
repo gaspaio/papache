@@ -44,7 +44,18 @@ and
 
     papache vhdelete mysite.local
 
+
 ## Bug reports, feature requests, etc
 
 They're great. Patches / Pull requests are better though !
+
+
+## Credits
+
+Well, ME i gess, but also :
+
+* **https://github.com/reload/phing-drupal-template**
+    A great phing script pour Jenkins and Drupal
+* **http://drupal.org/project/phingdrushtask**
+    The Phing Drush integration. Simple but it works perfectly.
 
