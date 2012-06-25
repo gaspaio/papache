@@ -16,9 +16,14 @@
 
 
   <!-- Major target: Install Drupal and create the virtual host -->
-  <target name="vhdrupal" depends="checkParams">
-    <phingCall target="drupalCreate"/>
+  <target name="dcreate" depends="checkParams">
+    <phingCall target="drupalDownloadInstall"/>
     <phingCall target="vhcreate"/>
+  </target>
+
+  <target name="ddestroy" depends="checkParams">
+    <phingCall target="vhdestroy"/>
+    <phingCall target="drupalDBDestroy"/>
   </target>
 
 
@@ -50,21 +55,21 @@
     <exec command="/etc/init.d/apache2 reload" />
 
     <!-- update hosts file -->
-    <phingCall target="add_localhost"/>
+    <phingCall target="addLocalhost"/>
   </target>
 
 
   <!-- Major target: Delete an existing virtual host, but keep the docroot data directory -->
-  <target name="vhdelete" depends="checkParams"> 
+  <target name="vhdestroy" depends="checkParams"> 
     <echo message="Deleting vistual host ${filesys.apacheroot}/${vhostname}"/>
     <exec command="a2dissite ${vhostname}.conf"/>
     <exec command="/etc/init.d/apache2 reload"/>
     <delete file="/etc/apache2/sites-available/${vhostname}.conf"/>
-    <phingCall target="del_localhost"/>
+    <phingCall target="deleteLocalhost"/>
   </target>
 
   <!-- Create a new drupal installation using drush make and drush site-install -->
-  <target name="drupalCreate" depends="checkParams">
+  <target name="drupalDownloadInstall" depends="checkParams">
     <echo message="Building Drupal using the '${drupal.makefile} makefile"/> 
     <!-- The virtual host directory will be recreated by drush make -->
     <delete dir="${filesys.apacheroot}/${vhostname}" quiet="true" includeemptydirs="true"/>
@@ -89,14 +94,20 @@
     </drush>
   </target>
 
+  <target name="drupalDBDestroy" depends="checkParams">
+    <!-- Don't use dots in the database name -->
+    <php expression="str_replace('.','_', '${vhostname}')" returnProperty="dbname"/>
+    <exec command="mysqladmin -u${mysql.user} -p${mysql.password} drop ${dbname}" passthru="true"/>    
+  </target>
+
   <!-- Add the virtual host entry to the /etc/hosts file -->
-  <target name="add_localhost" depends="checkParams">
+  <target name="addLocalhost" depends="checkParams">
     <append destFile="/etc/hosts" text="${line.separator}127.0.0.1  ${vhostname}${line.separator}" />
   </target>
 
 
   <!-- Delete the virtual host entry from the /etc/hosts file -->
-  <target name="del_localhost" depends="checkParams">
+  <target name="deleteLocalhost" depends="checkParams">
     <!-- It is simple and faster to use sed instead of a reflexive task and filterchains -->
     <php expression="str_replace('.','\.', '${vhostname}')" returnProperty="cleanVhostname"/>
     <exec command="sed -i '/${cleanVhostname}/d' /etc/hosts"/>
