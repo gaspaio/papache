@@ -66,6 +66,8 @@
   <!-- Create a new drupal installation using drush make and drush site-install -->
   <target name="drupalCreate" depends="checkParams">
     <echo message="Building Drupal using the '${drupal.makefile} makefile"/> 
+    <!-- The virtual host directory will be recreated by drush make -->
+    <delete dir="${filesys.apacheroot}/${vhostname}" quiet="true" includeemptydirs="true"/>
     <drush command="make" assume="yes">
       <param>${drupal.makefile}</param>
       <param>${filesys.apacheroot}/${vhostname}</param>
