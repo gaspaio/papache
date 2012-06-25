@@ -89,7 +89,6 @@
     </drush>
   </target>
 
-
   <!-- Add the virtual host entry to the /etc/hosts file -->
   <target name="add_localhost" depends="checkParams">
     <append destFile="/etc/hosts" text="${line.separator}127.0.0.1  ${vhostname}${line.separator}" />
@@ -101,6 +100,14 @@
     <!-- It is simple and faster to use sed instead of a reflexive task and filterchains -->
     <php expression="str_replace('.','\.', '${vhostname}')" returnProperty="cleanVhostname"/>
     <exec command="sed -i '/${cleanVhostname}/d' /etc/hosts"/>
+
+    <if>
+      <isTrue value="${options.deleteData}"/>
+      <then>
+        <delete dir="${filesys.apacheroot}/${vhostname}" quiet="true" includeemptydirs="true"/>
+      </then>
+    </if>
+
   </target>
 
 
@@ -113,6 +120,7 @@
     <property name="filesys.apacheroot" value="/var/www"/>
     <property name="filesys.siteowner" value="root"/>
     <property name="filesys.sitegrp" value="root"/>
+    <property name="options.deleteData" value="false"/>
 
     <fail unless="vhostname" message="No virtual host name! Check the help text for options." />
   </target>
