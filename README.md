@@ -4,9 +4,10 @@ Phing script to manage drupal installations on apache virtual hosts
 
 It provides the following targets :
 
-*   **vhcreate** - Create a virtual host installation
-*   **vhdelete** - Delete a virtual host.
-*   **vhdrupal** - Downloads and installs drupal and creates an Apache virtual host
+*   **vhcreate**	Create a virtual host installation
+*   **vhdestroy**	Delete a virtual host. 
+*   **dcreate**		Download and install drupal and create an Apache virtual host
+*   **ddestroy**	Delete a Drupal installation and associated virtual host. 
 
 ## Usage
 
@@ -32,7 +33,7 @@ Or you can create a symlinked command in one of your path directories and point 
 
 If you do this correctly you'll be able to write
 
-    papache vhdrupal mysite.local
+    papache dcreate mysite.local
 
 or
 
@@ -40,7 +41,7 @@ or
 
 and
 
-    papache vhdelete mysite.local
+    papache vhdestroy mysite.local
 
 
 ## Bug reports, feature requests, etc
