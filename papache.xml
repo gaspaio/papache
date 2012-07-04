@@ -29,9 +29,10 @@
 
   <!-- Major target: Virtual host creation-->
   <target name="vhcreate" depends="checkParams">
-    <echo message="Creating (if it doesn't exist) the ${filesys.apacheroot}/${vhostname} virtual host and directory on ${filesys.apacheroot}"/>
-    <mkdir dir="${filesys.apacheroot}/${vhostname}"/>
-    <chown file="${filesys.apacheroot}/${vhostname}" 
+    <echo message="Creating (if it doesn't exist) the ${vhostname} virtual host at ${filesys.docroot}"/>
+    
+    <mkdir dir="${filesys.docroot}"/>
+    <chown file="${filesys.docroot}" 
            user="${filesys.siteowner}.${filesys.sitegrp}" 
            verbose="true" 
            failonerror="false"/>
@@ -45,7 +46,7 @@
       <filterchain>
         <replaceregexp>
           <regexp pattern="##SERVNAME##" replace="${vhostname}" ignoreCase="true" />
-          <regexp pattern="##DOCROOT##" replace="${filesys.apacheroot}/${vhostname}" ignoreCase="false" />
+          <regexp pattern="##DOCROOT##" replace="${filesys.docroot}" ignoreCase="false" />
         </replaceregexp>
       </filterchain> 
     </copy>
@@ -61,7 +62,7 @@
 
   <!-- Major target: Delete an existing virtual host, but keep the docroot data directory -->
   <target name="vhdestroy" depends="checkParams"> 
-    <echo message="Deleting vistual host ${filesys.apacheroot}/${vhostname}"/>
+    <echo message="Deleting virtual host ${vhostname}"/>
     <exec command="a2dissite ${vhostname}.conf"/>
     <exec command="/etc/init.d/apache2 reload"/>
     <delete file="/etc/apache2/sites-available/${vhostname}.conf"/>
@@ -72,7 +73,7 @@
   <target name="drupalDownloadInstall" depends="checkParams">
     <echo message="Building Drupal using the '${drupal.makefile} makefile"/> 
     <!-- The virtual host directory will be recreated by drush make -->
-    <delete dir="${filesys.apacheroot}/${vhostname}" quiet="true" includeemptydirs="true"/>
+    <delete dir="${filesys.docroot}" quiet="true" includeemptydirs="true"/>
     <drush command="make" assume="yes">
       <param>${drupal.makefile}</param>
       <param>${filesys.apacheroot}/${vhostname}</param>
@@ -82,7 +83,7 @@
     <chown user="${filesys.siteowner}.${filesys.sitegrp}" 
            verbose="false" 
            failonerror="false">
-      <fileset dir="${filesys.apacheroot}/${vhostname}"/>
+      <fileset dir="${filesys.docroot}"/>
     </chown>
 
     <!-- Don't use dots in the database name -->
@@ -108,6 +109,7 @@
 
   <!-- Delete the virtual host entry from the /etc/hosts file -->
   <target name="deleteLocalhost" depends="checkParams">
+    
     <!-- It is simple and faster to use sed instead of a reflexive task and filterchains -->
     <php expression="str_replace('.','\.', '${vhostname}')" returnProperty="cleanVhostname"/>
     <exec command="sed -i '/${cleanVhostname}/d' /etc/hosts"/>
@@ -115,7 +117,7 @@
     <if>
       <isTrue value="${options.deleteData}"/>
       <then>
-        <delete dir="${filesys.apacheroot}/${vhostname}" quiet="true" includeemptydirs="true"/>
+        <delete dir="${filesys.docroot}" quiet="true" includeemptydirs="true"/>
       </then>
     </if>
 
@@ -134,6 +136,9 @@
     <property name="options.deleteData" value="false"/>
 
     <fail unless="vhostname" message="No virtual host name! Check the help text for options." />
+    
+    <!-- Allow for custom docroot if one is passed as a property -->
+    <property name="filesys.docroot" value="${filesys.apacheroot}/${vhostname}"/>
   </target>
 
 </project>
