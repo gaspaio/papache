@@ -3,56 +3,77 @@
 <project name="Papache" default="help">
   <property name="templateDir" value="${project.basedir}/templates"/>
   <property name="taskDir" value="${project.basedir}/tasks"/>
+
+  <!-- Default values for properties-->
   <property file="${project.basedir}/papache.properties"/>
-  <echo message="taskdir=${taskDir}"/>
+  <property name="a.docroot" value="${a.apacheroot}/${vhost}"/>
+  <property name="d.makefile" value="${templateDir}/default.make"/>
+  <property name="d.profile" value="standard"/>
+    
   <taskdef name="drush" classname="DrushTask"
            classpath="${taskDir}/phingdrushtask"/>
 
-
   <!-- Default task : display the available major targets  -->
   <target name="help">
-    <echo message="This is a help text with the different options. Well not yet, but it will ... someday."/>
+<echo>
+Main options:
+- vhost:      Virtual host name to create/delete, required (${vhost}).
+- o.del:      Delete docroot data on vhdestroy (${o.del}).
+
+Apache related options:
+- a.apacheroot:  Base dir for all hvosts (${a.apacheroot}).
+- a.docroot:     Docroot, by default "apacheroot"/"vhost" (${a.docroot}).
+- a.owner:       Docroot owner (${a.owner}).
+- a.group:       Docroot group (${a.group}).
+
+MySQL related options:
+- m.user:     MySQL user (${m.user}).
+- m.pwd:      MySQL password (${m.pwd}).
+- m.host:     MySQL host (${m.host}).
+
+Drupal related options:
+- d.makefile: Drupal makefile, if any (${d.makefile}).
+- d.profile:  Drupal instal profile (${d.profile}).
+- d.pwd:      Drupal admin password (${d.pwd}).
+</echo>
   </target>
 
-
   <!-- Major target: Install Drupal and create the virtual host -->
-  <target name="dcreate" depends="checkParams">
+  <target name="dcreate">
     <phingCall target="drupalDownloadInstall"/>
     <phingCall target="vhcreate"/>
   </target>
 
-  <target name="ddestroy" depends="checkParams">
+  <target name="ddestroy">
     <phingCall target="vhdestroy"/>
     <phingCall target="drupalDBDestroy"/>
   </target>
 
-
   <!-- Major target: Virtual host creation-->
-  <target name="vhcreate" depends="checkParams">
+  <target name="vhcreate">
     <echo message="Creating (if it doesn't exist) the ${vhostname} virtual host at ${filesys.docroot}"/>
     
-    <mkdir dir="${filesys.docroot}"/>
-    <chown file="${filesys.docroot}" 
-           user="${filesys.siteowner}.${filesys.sitegrp}" 
+    <mkdir dir="${a.docroot}"/>
+    <chown file="${a.docroot}" 
+           user="${a.owner}.${a.group}" 
            verbose="true" 
            failonerror="false"/>
 
-
     <!-- write vhosts file with the information -->    
-    <echo message="Creating virtual host ${vhostname}"/>
+    <echo message="Creating virtual host ${vhost}"/>
     <copy file="${templateDir}/vhost_template.conf" 
-          tofile="/etc/apache2/sites-available/${vhostname}.conf" 
+          tofile="/etc/apache2/sites-available/${vhost}.conf" 
           overwrite="true">
       <filterchain>
         <replaceregexp>
-          <regexp pattern="##SERVNAME##" replace="${vhostname}" ignoreCase="true" />
-          <regexp pattern="##DOCROOT##" replace="${filesys.docroot}" ignoreCase="false" />
+          <regexp pattern="##SERVNAME##" replace="${vhost}" ignoreCase="true" />
+          <regexp pattern="##DOCROOT##" replace="${a.docroot}" ignoreCase="false" />
         </replaceregexp>
       </filterchain> 
     </copy>
  
     <!-- apply site and reload apache configs -->
-    <exec command="a2ensite ${vhostname}.conf" />
+    <exec command="a2ensite ${vhost}.conf" />
     <exec command="/etc/init.d/apache2 reload" />
 
     <!-- update hosts file -->
@@ -61,84 +82,64 @@
 
 
   <!-- Major target: Delete an existing virtual host, but keep the docroot data directory -->
-  <target name="vhdestroy" depends="checkParams"> 
-    <echo message="Deleting virtual host ${vhostname}"/>
-    <exec command="a2dissite ${vhostname}.conf"/>
+  <target name="vhdestroy"> 
+    <echo message="Deleting virtual host ${vhost}"/>
+    <exec command="a2dissite ${vhost}.conf"/>
     <exec command="/etc/init.d/apache2 reload"/>
-    <delete file="/etc/apache2/sites-available/${vhostname}.conf"/>
+    <delete file="/etc/apache2/sites-available/${vhost}.conf"/>
     <phingCall target="deleteLocalhost"/>
   </target>
 
   <!-- Create a new drupal installation using drush make and drush site-install -->
-  <target name="drupalDownloadInstall" depends="checkParams">
-    <echo message="Building Drupal using the '${drupal.makefile} makefile"/> 
+  <target name="drupalDownloadInstall">
+    <echo message="Building Drupal using the '${d.makefile} makefile"/> 
     <!-- The virtual host directory will be recreated by drush make -->
-    <delete dir="${filesys.docroot}" quiet="true" includeemptydirs="true"/>
+    <delete dir="${a.docroot}" quiet="true" includeemptydirs="true"/>
     <drush command="make" assume="yes">
-      <param>${drupal.makefile}</param>
-      <param>${filesys.apacheroot}/${vhostname}</param>
+      <param>${d.makefile}</param>
+      <param>${a.apacheroot}/${vhost}</param>
     </drush>
 
     <!-- Make sure the site files belong to a given user and not root -->
-    <chown user="${filesys.siteowner}.${filesys.sitegrp}" 
+    <chown user="${a.owner}.${a.group}" 
            verbose="false" 
            failonerror="false">
-      <fileset dir="${filesys.docroot}"/>
+      <fileset dir="${a.docroot}"/>
     </chown>
 
     <!-- Don't use dots in the database name -->
-    <php expression="str_replace('.','_', '${vhostname}')" returnProperty="dbname"/>
+    <php expression="str_replace('.','_', '${vhost}')" returnProperty="dbname"/>
     <drush command="site-install" assume="yes">
-      <option name="root">${filesys.apacheroot}/${vhostname}</option>
-      <option name="db-url">mysql://${mysql.user}:${mysql.password}@${mysql.host}/${dbname}</option>
-      <param>${drupal.profile}</param> 
+      <option name="root">${a.docroot}</option>
+      <option name="db-url">mysql://${m.user}:${m.pwd}@${m.host}/${dbname}</option>
+      <param>${d.profile}</param> 
     </drush>
   </target>
 
-  <target name="drupalDBDestroy" depends="checkParams">
+  <target name="drupalDBDestroy">
     <!-- Don't use dots in the database name -->
     <php expression="str_replace('.','_', '${vhostname}')" returnProperty="dbname"/>
-    <exec command="mysqladmin -u${mysql.user} -p${mysql.password} drop ${dbname}" passthru="true"/>    
+    <exec command="mysqladmin -u${m.user} -p${m.pwd} drop ${dbname}" passthru="true"/>    
   </target>
 
   <!-- Add the virtual host entry to the /etc/hosts file -->
-  <target name="addLocalhost" depends="checkParams">
-    <append destFile="/etc/hosts" text="${line.separator}127.0.0.1  ${vhostname}${line.separator}" />
+  <target name="addLocalhost">
+    <append destFile="/etc/hosts" text="${line.separator}127.0.0.1  ${vhost}" />
   </target>
 
 
   <!-- Delete the virtual host entry from the /etc/hosts file -->
-  <target name="deleteLocalhost" depends="checkParams">
-    
+  <target name="deleteLocalhost">
     <!-- It is simple and faster to use sed instead of a reflexive task and filterchains -->
-    <php expression="str_replace('.','\.', '${vhostname}')" returnProperty="cleanVhostname"/>
+    <php expression="str_replace('.','\.', '${vhost}')" returnProperty="cleanVhostname"/>
     <exec command="sed -i '/${cleanVhostname}/d' /etc/hosts"/>
 
     <if>
-      <isTrue value="${options.deleteData}"/>
+      <isTrue value="${o.del}"/>
       <then>
-        <delete dir="${filesys.docroot}" quiet="true" includeemptydirs="true"/>
+        <delete dir="${a.docroot}" quiet="true" includeemptydirs="true"/>
       </then>
     </if>
 
   </target>
-
-
-  <!-- Load for the properties file and check cumpulsory arguments -->
-  <target name="checkParams">
-    <property name="drupal.makefile" value="${templateDir}/default.make"/>
-    <property name="drupal.profile" value="standard"/>
-
-    <!-- Define generic defaults -->
-    <property name="filesys.apacheroot" value="/var/www"/>
-    <property name="filesys.siteowner" value="root"/>
-    <property name="filesys.sitegrp" value="root"/>
-    <property name="options.deleteData" value="false"/>
-
-    <fail unless="vhostname" message="No virtual host name! Check the help text for options." />
-    
-    <!-- Allow for custom docroot if one is passed as a property -->
-    <property name="filesys.docroot" value="${filesys.apacheroot}/${vhostname}"/>
-  </target>
-
 </project>
