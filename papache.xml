@@ -51,7 +51,7 @@ Drupal related options:
 
   <!-- Major target: Virtual host creation-->
   <target name="vhcreate">
-    <echo message="Creating (if it doesn't exist) the ${vhostname} virtual host at ${filesys.docroot}"/>
+    <echo message="Creating (if it doesn't exist) the ${vhost} virtual host at ${a.docroot}"/>
     
     <mkdir dir="${a.docroot}"/>
     <chown file="${a.docroot}" 
