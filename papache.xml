@@ -39,18 +39,18 @@ Drupal related options:
   </target>
 
   <!-- Major target: Install Drupal and create the virtual host -->
-  <target name="dcreate">
+  <target name="dcreate" depends="validateVHost">
     <phingCall target="drupalDownloadInstall"/>
     <phingCall target="vhcreate"/>
   </target>
 
-  <target name="ddestroy">
+  <target name="ddestroy" depends="validateVHost">
     <phingCall target="vhdestroy"/>
     <phingCall target="drupalDBDestroy"/>
   </target>
 
   <!-- Major target: Virtual host creation-->
-  <target name="vhcreate">
+  <target name="vhcreate" depends="validateVHost"> 
     <echo message="Creating (if it doesn't exist) the ${vhost} virtual host at ${a.docroot}"/>
     
     <mkdir dir="${a.docroot}"/>
@@ -82,7 +82,7 @@ Drupal related options:
 
 
   <!-- Major target: Delete an existing virtual host, but keep the docroot data directory -->
-  <target name="vhdestroy"> 
+  <target name="vhdestroy" depends="validateVHost"> 
     <echo message="Deleting virtual host ${vhost}"/>
     <exec command="a2dissite ${vhost}.conf"/>
     <exec command="/etc/init.d/apache2 reload"/>
@@ -91,7 +91,7 @@ Drupal related options:
   </target>
 
   <!-- Create a new drupal installation using drush make and drush site-install -->
-  <target name="drupalDownloadInstall">
+  <target name="drupalDownloadInstall" depends="validateVHost">
     <echo message="Building Drupal using the '${d.makefile} makefile"/> 
     <!-- The virtual host directory will be recreated by drush make -->
     <delete dir="${a.docroot}" quiet="true" includeemptydirs="true"/>
@@ -116,20 +116,20 @@ Drupal related options:
     </drush>
   </target>
 
-  <target name="drupalDBDestroy">
+  <target name="drupalDBDestroy" depends="validateVHost">
     <!-- Don't use dots in the database name -->
-    <php expression="str_replace('.','_', '${vhostname}')" returnProperty="dbname"/>
+    <php expression="str_replace('.','_', '${vhost}')" returnProperty="dbname"/>
     <exec command="mysqladmin -u${m.user} -p${m.pwd} drop ${dbname}" passthru="true"/>    
   </target>
 
   <!-- Add the virtual host entry to the /etc/hosts file -->
-  <target name="addLocalhost">
+  <target name="addLocalhost" depends="validateVHost">
     <append destFile="/etc/hosts" text="${line.separator}127.0.0.1  ${vhost}" />
   </target>
 
 
   <!-- Delete the virtual host entry from the /etc/hosts file -->
-  <target name="deleteLocalhost">
+  <target name="deleteLocalhost" depends="validateVHost">
     <!-- It is simple and faster to use sed instead of a reflexive task and filterchains -->
     <php expression="str_replace('.','\.', '${vhost}')" returnProperty="cleanVhostname"/>
     <exec command="sed -i '/${cleanVhostname}/d' /etc/hosts"/>
@@ -140,6 +140,9 @@ Drupal related options:
         <delete dir="${a.docroot}" quiet="true" includeemptydirs="true"/>
       </then>
     </if>
+  </target>
 
+  <target name="validateVHost">
+    <fail unless="vhost" message="No virtual host name! Check the help text for options." />
   </target>
 </project>
