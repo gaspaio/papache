@@ -103,7 +103,7 @@ Drupal related options:
     <delete dir="${a.docroot}" quiet="true" includeemptydirs="true"/>
     <drush command="make" assume="yes">
       <param>${d.makefile}</param>
-      <param>${a.apacheroot}/${vhost}</param>
+      <param>${a.docroot}</param>
     </drush>
 
     <!-- Make sure the site files belong to a given user and not root -->
