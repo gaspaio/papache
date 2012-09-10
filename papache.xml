@@ -23,8 +23,9 @@ Main options:
 Apache related options:
 - a.apacheroot:  Base dir for all hvosts (${a.apacheroot}).
 - a.docroot:     Docroot, by default "apacheroot"/"vhost" (${a.docroot}).
-- a.owner:       Docroot owner (${a.owner}).
-- a.group:       Docroot group (${a.group}).
+- a.chownfiles:  Change owner:group of files in docroot (${achownfiles})
+-- a.owner:       Docroot owner (${a.owner}).
+-- a.group:       Docroot group (${a.group}).
 
 MySQL related options:
 - m.user:     MySQL user (${m.user}).
@@ -54,10 +55,15 @@ Drupal related options:
     <echo message="Creating (if it doesn't exist) the ${vhost} virtual host at ${a.docroot}"/>
     
     <mkdir dir="${a.docroot}"/>
-    <chown file="${a.docroot}" 
-           user="${a.owner}.${a.group}" 
-           verbose="true" 
-           failonerror="false"/>
+    <if>
+      <isTrue value="${a.chownfiles}"/>
+      <then>
+        <chown file="${a.docroot}" 
+               user="${a.owner}.${a.group}" 
+               verbose="true" 
+               failonerror="false"/>
+      </then>
+    </if>
 
     <!-- write vhosts file with the information -->    
     <echo message="Creating virtual host ${vhost}"/>
@@ -101,11 +107,16 @@ Drupal related options:
     </drush>
 
     <!-- Make sure the site files belong to a given user and not root -->
-    <chown user="${a.owner}.${a.group}" 
-           verbose="false" 
-           failonerror="false">
-      <fileset dir="${a.docroot}"/>
-    </chown>
+    <if>
+      <isTrue value="${a.chownfiles}"/>
+      <then>
+        <chown user="${a.owner}.${a.group}" 
+               verbose="false" 
+               failonerror="false">
+          <fileset dir="${a.docroot}"/>
+        </chown>
+      </then>
+    </if>
 
     <!-- Don't use dots in the database name -->
     <php expression="str_replace('.','_', '${vhost}')" returnProperty="dbname"/>
