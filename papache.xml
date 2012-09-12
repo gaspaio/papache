@@ -9,6 +9,7 @@
   <property name="a.docroot" value="${a.apacheroot}/${vhost}"/>
   <property name="d.makefile" value="${templateDir}/default.make"/>
   <property name="d.profile" value="standard"/>
+  <property name="d.pass" value="admin"/>
     
   <taskdef name="drush" classname="DrushTask"
            classpath="${taskDir}/phingdrushtask"/>
@@ -123,6 +124,7 @@ Drupal related options:
     <drush command="site-install" assume="yes">
       <option name="root">${a.docroot}</option>
       <option name="db-url">mysql://${m.user}:${m.pwd}@${m.host}/${dbname}</option>
+      <option name="account-pass">${d.pass}</option>
       <param>${d.profile}</param> 
     </drush>
   </target>
