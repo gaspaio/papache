@@ -89,18 +89,31 @@ Drupal related options:
 
   <!-- Major target: Delete an existing virtual host, but keep the docroot data directory -->
   <target name="vhdestroy" depends="validateVHost"> 
+    <!-- Remove vhost a2 settings & file-->
     <echo message="Deleting virtual host ${vhost}"/>
     <exec command="a2dissite ${vhost}.conf"/>
     <exec command="/etc/init.d/apache2 reload"/>
     <delete file="/etc/apache2/sites-available/${vhost}.conf"/>
-    <phingCall target="deleteLocalhost"/>
+    
+    <!-- Remove /etc/hosts entry
+         It is simple and faster to use sed instead of a reflexive task and filterchains -->
+    <php expression="str_replace('.','\.', '${vhost}')" returnProperty="cleanVhostname"/>
+    <exec command="sed -i '/${cleanVhostname}/d' /etc/hosts"/>
+
+    <!-- Delete docroot -->
+    <if>
+      <isTrue value="${o.del}"/>
+      <then>
+        <phingCall target="deleteDocroot"/>
+      </then>
+    </if>
   </target>
 
   <!-- Create a new drupal installation using drush make and drush site-install -->
   <target name="drupalDownloadInstall" depends="validateVHost">
     <echo message="Building Drupal using the '${d.makefile} makefile"/> 
     <!-- The virtual host directory will be recreated by drush make -->
-    <delete dir="${a.docroot}" quiet="true" includeemptydirs="true"/>
+    <phingCall target="deleteDocroot"/>
     <drush command="make" assume="yes">
       <param>${d.makefile}</param>
       <param>${a.docroot}</param>
@@ -138,20 +151,14 @@ Drupal related options:
     <append destFile="/etc/hosts" text="${line.separator}127.0.0.1  ${vhost}" />
   </target>
 
-
-  <!-- Delete the virtual host entry from the /etc/hosts file -->
-  <target name="deleteLocalhost" depends="validateVHost">
-    <!-- It is simple and faster to use sed instead of a reflexive task and filterchains -->
-    <php expression="str_replace('.','\.', '${vhost}')" returnProperty="cleanVhostname"/>
-    <exec command="sed -i '/${cleanVhostname}/d' /etc/hosts"/>
-
-    <if>
-      <isTrue value="${o.del}"/>
-      <then>
-        <delete dir="${a.docroot}" quiet="true" includeemptydirs="true"/>
-      </then>
-    </if>
+  <!-- Delete a docroot directory: chmod 755 to make sure we can delete -->
+  <target name="deleteDocroot">
+    <chmod quiet="true" mode="0755" failonerror="false">
+      <fileset dir="${a.docroot}" includes=".,*,**/*"/>
+    </chmod> 
+    <delete dir="${a.docroot}" quiet="true" includeemptydirs="true"/>
   </target>
+
 
   <target name="validateVHost">
     <fail unless="vhost" message="No virtual host name! Check the help text for options." />
