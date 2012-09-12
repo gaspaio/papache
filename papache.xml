@@ -155,10 +155,15 @@ Drupal related options:
 
   <!-- Delete a docroot directory: chmod 755 to make sure we can delete -->
   <target name="deleteDocroot">
-    <chmod quiet="true" mode="0755" verbose="false">
-      <fileset dir="${a.docroot}" includes=".,*,**/*"/>
-    </chmod> 
-    <delete dir="${a.docroot}" quiet="true" includeemptydirs="true"/>
+    <if>
+      <available file="${a.docroot}" type='dir'/>
+      <then>
+        <chmod quiet="true" mode="0755" verbose="false">
+          <fileset dir="${a.docroot}" includes=".,*,**/*"/>
+        </chmod>      
+        <delete dir="${a.docroot}" quiet="true" includeemptydirs="true"/>
+       </then>
+    </if> 
   </target>
 
 
