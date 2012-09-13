@@ -16,23 +16,29 @@
   <!-- Default task : display the available major targets  -->
   <target name="help">
 <echo>
-Main options:
+Main targets:
+
+- vhcreate    Create a virtual host and update /etc/hosts accordingly.
+- vhdestroy   Destroy a virtual host and update /etc/hosts.
+- dcreate     Create a Drupal installation inside a vhost.
+- ddestroy    Destroy a vhost and a Drupal installation.
+
+
+Options:
+
 - vhost:      Virtual host name to create/delete, required (${vhost}).
 - o.del:      Delete docroot data on vhdestroy (${o.del}).
 
-Apache related options:
 - a.apacheroot:  Base dir for all hvosts (${a.apacheroot}).
 - a.docroot:     Docroot, by default "apacheroot"/"vhost" (${a.docroot}).
-- a.chownfiles:  Change owner:group of files in docroot (${achownfiles})
+- a.chownfiles:  Change owner:group of files in docroot (${a.chownfiles})
 -- a.owner:       Docroot owner (${a.owner}).
 -- a.group:       Docroot group (${a.group}).
 
-MySQL related options:
 - m.user:     MySQL user (${m.user}).
 - m.pwd:      MySQL password (${m.pwd}).
 - m.host:     MySQL host (${m.host}).
 
-Drupal related options:
 - d.makefile: Drupal makefile, if any (${d.makefile}).
 - d.profile:  Drupal instal profile (${d.profile}).
 - d.pwd:      Drupal admin password (${d.pwd}).
