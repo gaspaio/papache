@@ -42,7 +42,7 @@ Options:
 
 - d.makefile: Drupal makefile, if any (${d.makefile}).
 - d.profile:  Drupal instal profile (${d.profile}).
-- d.pwd:      Drupal admin password (${d.pwd}).
+- d.pass:      Drupal admin password (${d.pass}).
 </echo>
   </target>
 
